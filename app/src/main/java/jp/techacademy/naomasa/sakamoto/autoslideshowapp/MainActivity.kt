@@ -9,17 +9,20 @@ import android.provider.MediaStore
 import android.content.ContentUris
 import android.media.Image
 import android.net.Uri
+import android.os.Handler
 import android.util.Log
 import android.view.View
-import android.widget.ImageView
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlin.reflect.typeOf
+import java.util.*
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     private val PERMISSIONS_REQUEST_CODE = 100
     private var imageUriList = mutableListOf<Uri>()
     private var index = 0
+    private var mTimer: Timer? = null
+    private var mTimerSec = 0.0
+    private var mHandler = Handler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,6 +98,35 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 this.index -= 1
             }
             imageView.setImageURI(imageUriList[index])
+        }
+
+        if (v.id == R.id.auto_button) {
+            if (auto_button.text == "再生") {
+                auto_button.text = "停止"
+                go_button.isEnabled = false
+                back_button.isEnabled = false
+
+                mTimer = Timer()
+                mTimer!!.schedule(object : TimerTask() {
+                    override fun run() {
+                        mHandler.post {
+                            if (index == (imageUriList.size - 1)) {
+                                index = 0
+                            } else {
+                                index += 1
+                            }
+                            imageView.setImageURI(imageUriList[index])
+                        }
+                    }
+                }, 2000, 2000) // 最初に始動させるまで100ミリ秒、ループの間隔を100ミリ秒 に設定
+            } else if (auto_button.text == "停止") {
+                auto_button.text = "再生"
+                go_button.isEnabled = true
+                back_button.isEnabled = true
+
+                mTimer!!.cancel()
+                mTimer = null
+            }
         }
     }
 
