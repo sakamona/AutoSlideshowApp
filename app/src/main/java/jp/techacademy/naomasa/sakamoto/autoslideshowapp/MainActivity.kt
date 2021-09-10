@@ -12,8 +12,10 @@ import android.net.Uri
 import android.os.Handler
 import android.util.Log
 import android.view.View
+import androidx.annotation.RequiresApi
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
+import com.google.android.material.snackbar.Snackbar
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
 
@@ -23,6 +25,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private var mTimer: Timer? = null
     private var mTimerSec = 0.0
     private var mHandler = Handler()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,24 +37,29 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                 // 許可されている
                 getContentsInfo()
-                go_button.setOnClickListener(this)
-                back_button.setOnClickListener(this)
-                auto_button.setOnClickListener(this)
-                imageView.setImageURI(imageUriList[index])
             } else {
                 // 許可されていないので許可ダイアログを表示する
                 requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSIONS_REQUEST_CODE)
             }
+        } else {
+            val v: View = findViewById(android.R.id.content)
+            Snackbar.make(v, "お使いの端末ではご利用出来ません。", Snackbar.LENGTH_LONG).show()
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             PERMISSIONS_REQUEST_CODE ->
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     getContentsInfo()
-
+                } else {
+                    val v: View = findViewById(android.R.id.content)
+                    Snackbar.make(v, "許可がないので使用出来ません。", Snackbar.LENGTH_INDEFINITE)
+                        .setAction("retry") {
+                            requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSIONS_REQUEST_CODE)
+                        }.show()
                 }
         }
     }
@@ -79,6 +87,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             } while (cursor.moveToNext())
         }
         cursor.close()
+
+        go_button.setOnClickListener(this)
+        back_button.setOnClickListener(this)
+        auto_button.setOnClickListener(this)
+        imageView.setImageURI(imageUriList[index])
     }
 
     override fun onClick(v: View) {
